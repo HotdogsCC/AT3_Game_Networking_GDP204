@@ -6,6 +6,7 @@
 #include "Interfaces/OnlineSessionInterface.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "OnlineSessionSettings.h"
+#include "MainMenuWidget.h"
 #include "MultiplayerSessionsSubsystem.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerCreateDelegate, bool, WasSuccessful);
@@ -52,5 +53,10 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FServerCreateDelegate ServerCreateDel;
+
+	void AddMainMenuWidget(UMainMenuWidget* inWidget);
+
+	//the main menu widget
+	UMainMenuWidget* MainMenuWidget = nullptr;
 	
 };

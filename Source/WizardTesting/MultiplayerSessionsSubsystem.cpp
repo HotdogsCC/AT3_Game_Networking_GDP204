@@ -4,7 +4,7 @@
 #include "OnlineSubsystem.h"
 #include "Online/OnlineSessionNames.h"
 
-
+//shortcut for printing a message on the viewport
 void PrintString(const FString& inputString)
 {
 	if(GEngine)
@@ -14,6 +14,7 @@ void PrintString(const FString& inputString)
 	
 }
 
+//construction
 UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem()
 {
 	bCreateServerAfterDestroy = false;
@@ -22,17 +23,19 @@ UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem()
 	MySessionName = FName("Project W Session Name");
 }
 
+//initialization
 void UMultiplayerSessionsSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
+	//grab the online subsystem
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 	if(OnlineSubsystem)
 	{
-		FString SubsystemName = OnlineSubsystem->GetSubsystemName().ToString();
-		PrintString(SubsystemName);
-
+		//grab the session interface 
 		SessionInterface = OnlineSubsystem->GetSessionInterface();
 		if(SessionInterface.IsValid())
 		{
+			//bind the delegates to the session interface
+
 			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this,
 				&UMultiplayerSessionsSubsystem::OnCreateSessionComplete);
 
@@ -48,17 +51,23 @@ void UMultiplayerSessionsSubsystem::Initialize(FSubsystemCollectionBase& Collect
 	}
 }
 
+//currently unused
 void UMultiplayerSessionsSubsystem::Deinitialize()
 {
 	
 }
 
+//when the user creates a server
 void UMultiplayerSessionsSubsystem::CreateServer(FString ServerName)
 {
 	PrintString("Creating Server");
 
 	if(ServerName.IsEmpty())
 	{
+		if (MainMenuWidget)
+		{
+			MainMenuWidget->CreatedServerWithNoName();
+		}
 		PrintString("Server name cannot be empty");
 		ServerCreateDel.Broadcast(false);
 		return;
@@ -232,4 +241,9 @@ void UMultiplayerSessionsSubsystem::OnJoinSessionComplete(FName SessionName, EOn
 	{
 		PrintString("OnJoinSessionComplete failed");
 	}
+}
+
+void UMultiplayerSessionsSubsystem::AddMainMenuWidget(UMainMenuWidget* inWidget)
+{
+	MainMenuWidget = inWidget;
 }

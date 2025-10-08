@@ -15,6 +15,12 @@ class WIZARDTESTING_API UMainMenuWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	virtual void NativeConstruct() override;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void CreatedServerWithNoName();
+
+protected:
 	UFUNCTION(BlueprintCallable)
 	bool IsSteamWorking() const;
 	

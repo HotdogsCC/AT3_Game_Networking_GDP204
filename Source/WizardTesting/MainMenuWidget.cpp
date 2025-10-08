@@ -2,7 +2,15 @@
 
 
 #include "MainMenuWidget.h"
+
+#include "MultiplayerSessionsSubsystem.h"
 #include "OnlineSubsystem.h"
+
+void UMainMenuWidget::NativeConstruct()
+{
+	GetGameInstance()->GetSubsystem<UMultiplayerSessionsSubsystem>()->AddMainMenuWidget(this);
+}
+
 
 bool UMainMenuWidget::IsSteamWorking() const
 {
@@ -18,3 +26,4 @@ bool UMainMenuWidget::IsSteamWorking() const
 
 	return false;
 }
+
