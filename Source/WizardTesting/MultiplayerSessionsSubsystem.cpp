@@ -135,7 +135,7 @@ void UMultiplayerSessionsSubsystem::OnCreateSessionComplete(FName SessionName, b
 	
 	if(bWasSuccessful)
 	{
-		GetWorld()->ServerTravel("/Game/Levels/GreyBox_Limbo_Map_1?listen");
+		GetWorld()->ServerTravel("/Game/Levels/TwoPlayerGame?listen");
 	}
 }
 
