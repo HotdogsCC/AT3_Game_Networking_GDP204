@@ -243,6 +243,11 @@ void AWizardCharacter::OnPrimaryFire()
 
 void AWizardCharacter::PrimaryFireServerRPC_Implementation()
 {
+	if (!ProjectileBP)
+	{
+		return;
+	}
+
 	//if this machine is the server
 	if(HasAuthority())
 	{
@@ -281,6 +286,11 @@ void AWizardCharacter::OnSecondaryFire()
 
 void AWizardCharacter::SecondaryFireServerRPC_Implementation() 
 {
+	if (!SecondaryProjectileBP)
+	{
+		return;
+	}
+
 	//if this machine is the server
 	if(HasAuthority())
 	{
@@ -302,7 +312,10 @@ void AWizardCharacter::SecondaryFireServerRPC_Implementation()
 			case EFireType::Automatic:
 				break;
 			}
+
 			
+
+
 			SpawnProjectile(SecondaryProjectileBP);
 			
 		}
