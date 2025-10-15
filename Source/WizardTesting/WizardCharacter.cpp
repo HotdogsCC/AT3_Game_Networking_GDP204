@@ -127,6 +127,12 @@ void AWizardCharacter::Tick(float DeltaTime)
 		
 	}
 
+	//bob the head
+	if (HUD_WidgetInstance)
+	{
+		HUD_WidgetInstance->HeadBob(GetPlayerSpeed());
+	}
+
 	//are we the server?
 	if(HasAuthority())
 	{
@@ -404,4 +410,9 @@ void AWizardCharacter::SpawnProjectile(UClass* ProjectileToSpawn)
 				
 		}
 	}
+}
+
+float AWizardCharacter::GetPlayerSpeed() const
+{
+	return GetVelocity().Length();
 }

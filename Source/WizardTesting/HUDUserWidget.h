@@ -22,4 +22,7 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void CanFire();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void HeadBob(float PlayerSpeed);
 };

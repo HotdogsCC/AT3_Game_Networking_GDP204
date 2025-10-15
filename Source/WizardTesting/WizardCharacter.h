@@ -45,6 +45,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void TakeDamage(int32 DamageTaken);
 
+	UFUNCTION(BlueprintCallable)
+	float GetPlayerSpeed() const;
+
 private:
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
