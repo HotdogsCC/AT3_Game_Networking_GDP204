@@ -117,6 +117,10 @@ void UMultiplayerSessionsSubsystem::JoinServer(FString ServerName)
 	if(ServerName.IsEmpty())
 	{
 		PrintString("Server Name cannot be empty");
+		if (MainMenuWidget)
+		{
+			MainMenuWidget->CreatedServerWithNoName();
+		}
 		ServerCreateDel.Broadcast(false);
 		return;
 	}
