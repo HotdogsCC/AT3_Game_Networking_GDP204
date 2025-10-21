@@ -8,6 +8,8 @@
 
 void UMainMenuWidget::NativeConstruct()
 {
+	Super::NativeConstruct();
+
 	GetGameInstance()->GetSubsystem<UMultiplayerSessionsSubsystem>()->AddMainMenuWidget(this);
 }
 

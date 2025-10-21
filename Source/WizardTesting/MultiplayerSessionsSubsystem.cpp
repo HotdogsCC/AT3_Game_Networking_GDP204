@@ -20,7 +20,7 @@ UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem()
 	bCreateServerAfterDestroy = false;
 	DestroyServerName = "";
 	ServerNameToFind = "";
-	MySessionName = FName("Project W Session Name");
+	MySessionName = FName("CharlieCampbellAIE");
 }
 
 //initialization
