@@ -3,6 +3,8 @@
 
 #include "JointButton.h"
 
+#include "Kismet/GameplayStatics.h"
+
 // Sets default values
 AJointButton::AJointButton()
 {
@@ -21,7 +23,13 @@ void AJointButton::BeginPlay()
 {
 	Super::BeginPlay();
 
+	//bind the delegate for collision
 	ButtonStaticMesh->OnComponentBeginOverlap.AddDynamic(this, &AJointButton::OnButtonHit);
+
+	//look for the other button
+	TArray<AActor*> AllButtons;
+	TSubclassOf<AJointButton> JointButtonClass;
+	UGameplayStatics::GetAllActorsOfClass(this, JointButtonClass, AllButtons);
 	
 }
 
@@ -34,6 +42,13 @@ void AJointButton::Tick(float DeltaTime)
 
 void AJointButton::OnButtonHit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	//dont do anything if we are not the server
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, "touched");
 	UE_LOG(LogTemp, Display, TEXT("touched"));
 }
 
