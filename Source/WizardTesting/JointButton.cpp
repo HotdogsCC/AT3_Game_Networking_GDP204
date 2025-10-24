@@ -3,6 +3,7 @@
 
 #include "JointButton.h"
 
+#include "OpeningDoor.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
@@ -53,8 +54,11 @@ void AJointButton::BeginPlay()
 
 		//otherwise, we're done!
 		OtherButton = Cast<AJointButton>(PossibleButton);
-		return;
+		break;
 	}
+
+	//look for the opening door
+	OpeningDoor = Cast<AOpeningDoor>(UGameplayStatics::GetActorOfClass(this, AOpeningDoor::StaticClass()));
 	
 }
 
@@ -119,7 +123,13 @@ void AJointButton::OnButtonOn()
 	//check the other button status
 	if (OtherButton->GetIsActive())
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, "Opened!");
+		if (!OpeningDoor)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, "No reference to opening door");
+			return;
+		}
+
+		OpeningDoor->OpenDoor();
 	}
 
 	//set material for the button

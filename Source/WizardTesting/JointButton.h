@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "JointButton.generated.h"
 
+class AOpeningDoor;
+
 UCLASS()
 class WIZARDTESTING_API AJointButton : public AActor
 {
@@ -53,6 +55,10 @@ private:
 	//reference to the other button
 	UPROPERTY()
 	AJointButton* OtherButton = nullptr;
+
+	//reference to the opening door
+	UPROPERTY()
+	AOpeningDoor* OpeningDoor = nullptr;
 	
 	//countdown for how long this button is active for
 	UPROPERTY()
