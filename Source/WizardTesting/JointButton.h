@@ -24,6 +24,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION()
+	bool GetIsActive() const;
+
+	UFUNCTION()
 	void OnButtonHit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 protected:
@@ -33,4 +36,48 @@ protected:
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* ButtonStaticMesh;
 
+	UPROPERTY(EditAnywhere)
+	UMaterial* OnMaterial = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	UMaterial* OffMaterial = nullptr;
+
+	//how long the button is active for
+	UPROPERTY(EditAnywhere)
+	float ActiveTime = 10.0f;
+
+private:
+	//tell unreal what to replicate
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	//reference to the other button
+	UPROPERTY()
+	AJointButton* OtherButton = nullptr;
+	
+	//countdown for how long this button is active for
+	UPROPERTY()
+	float ElapsedActiveTime = 0.0f;
+
+	//is this active?
+	UPROPERTY(ReplicatedUsing = OnRepIsActive)
+	bool bIsActive = false;
+
+	//handles active ticking
+	UFUNCTION()
+	void TickButtonActive(float DeltaTime);
+
+	//when this button is On
+	UFUNCTION()
+	void OnButtonOn();
+
+	//when this button is Off
+	UFUNCTION()
+	void OnButtonOff();
+
+	//change material of button
+	UFUNCTION()
+	void SetButtonMaterial(bool bIsOn);
+
+	UFUNCTION()
+	void OnRepIsActive();
 };
