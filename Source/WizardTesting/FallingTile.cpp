@@ -19,6 +19,11 @@ void AFallingTile::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (!bIsSafe)
+	{
+		StaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
 	//can this player see the truth?
 	if (HasAuthority() == bServerCanSeeAnswer)
 	{
