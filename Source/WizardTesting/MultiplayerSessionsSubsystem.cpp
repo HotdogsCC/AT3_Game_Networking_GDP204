@@ -148,7 +148,7 @@ void UMultiplayerSessionsSubsystem::OnCreateSessionComplete(FName SessionName, b
 	
 	if(bWasSuccessful)
 	{
-		GetWorld()->ServerTravel("/Game/Levels/TwoPlayerGame?listen");
+		GetWorld()->ServerTravel("/Game/TwoPlayerGame?listen");
 	}
 }
 
