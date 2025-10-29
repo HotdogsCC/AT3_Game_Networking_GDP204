@@ -3,6 +3,8 @@
 
 #include "FallingTile.h"
 
+#include "Net/UnrealNetwork.h"
+
 // Sets default values
 AFallingTile::AFallingTile()
 {
@@ -14,12 +16,29 @@ AFallingTile::AFallingTile()
 	RootComponent = StaticMesh;
 }
 
+void AFallingTile::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AFallingTile, bIsSafe);
+}
+
+
 // Called when the game starts or when spawned
 void AFallingTile::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (!bIsSafe)
+	SetupTile();
+}
+
+void AFallingTile::SetupTile()
+{
+	if (bIsSafe)
+	{
+		StaticMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	}
+	else
 	{
 		StaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
@@ -41,7 +60,6 @@ void AFallingTile::BeginPlay()
 	{
 		TrySetMaterial(RegularMaterial);
 	}
-	
 }
 
 // Called every frame
@@ -49,7 +67,30 @@ void AFallingTile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//dont do anything if we arent the server
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	if (bShouldFlip)
+	{
+		TickFlipTime(DeltaTime);
+	}
+		
 }
+
+void AFallingTile::TickFlipTime(const float DeltaTime)
+{
+	ElapsedFlipTime += DeltaTime;
+
+	if (ElapsedFlipTime >= TimeBetweenFlips)
+	{
+		ElapsedFlipTime = 0;
+		Flip();
+	}
+}
+
 
 void AFallingTile::TrySetMaterial(UMaterial* InMaterial)
 {
@@ -60,4 +101,12 @@ void AFallingTile::TrySetMaterial(UMaterial* InMaterial)
 	}
 
 	StaticMesh->SetMaterial(0, InMaterial);
+}
+
+void AFallingTile::Flip()
+{
+	bIsSafe = !bIsSafe;
+
+	SetupTile();
+
 }

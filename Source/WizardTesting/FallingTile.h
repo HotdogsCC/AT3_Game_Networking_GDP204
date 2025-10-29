@@ -19,6 +19,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+
 	//the mesh of this actor
 	UPROPERTY(EditAnywhere, meta=(AllowPrivateAccess="true"))
 	UStaticMeshComponent* StaticMesh = nullptr;
@@ -28,8 +30,18 @@ protected:
 	bool bServerCanSeeAnswer = true;
 
 	//will this tile remain stationary
-	UPROPERTY(EditInstanceOnly, Category = "Tile Config", meta=(AllowPrivateAccess="true"))
+	UPROPERTY(ReplicatedUsing = SetupTile, EditInstanceOnly, Category = "Tile Config", meta=(AllowPrivateAccess="true"))
 	bool bIsSafe = true;
+
+	//will this tile flip every X seconds
+	UPROPERTY(EditInstanceOnly, Category = "Tile Config|Flipping", meta = (AllowPrivateAccess = "true"))
+	bool bShouldFlip = false;
+
+	//the amount of seconds between flips
+	UPROPERTY(EditInstanceOnly, Category = "Tile Config|Flipping", meta = (AllowPrivateAccess = "true"))
+	float TimeBetweenFlips = 3.0f;
+
+	float ElapsedFlipTime = 0.0f;
 
 	//regular material that the targeted player will see
 	UPROPERTY(EditDefaultsOnly, Category = "Materials", meta=(AllowPrivateAccess="true"))
@@ -48,6 +60,12 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 private:
+	UFUNCTION()
+	void SetupTile();
 	void TrySetMaterial(UMaterial* InMaterial);
+	void Flip();
+
+
+	void TickFlipTime(const float DeltaTime);
 
 };
