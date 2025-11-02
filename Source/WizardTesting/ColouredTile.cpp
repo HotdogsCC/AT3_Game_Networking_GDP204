@@ -17,13 +17,6 @@ AColouredTile::AColouredTile()
 
 }
 
-void AColouredTile::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(AColouredTile, bIsSafe);
-}
-
 
 // Called when the game starts or when spawned
 void AColouredTile::BeginPlay()
@@ -46,12 +39,12 @@ void AColouredTile::ApplyNewSafety()
 	if (bIsSafe)
 	{
 		StaticMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		StaticMesh->SetMaterial(0, RedMat);
+		StaticMesh->SetMaterial(0, SafeMat);
 	}
 	else
 	{
 		StaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		StaticMesh->SetMaterial(0, TransRedMat);
+		StaticMesh->SetMaterial(0, UnsafeMat);
 	}
 }
 

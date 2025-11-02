@@ -16,8 +16,6 @@ public:
 	// Sets default values for this actor's properties
 	AColouredTile();
 
-	void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -27,10 +25,10 @@ protected:
 	UStaticMeshComponent* StaticMesh = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category="Materials", meta = (AllowPrivateAccess = "true"))
-	UMaterial* RedMat = nullptr;
+	UMaterial* SafeMat = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Materials", meta = (AllowPrivateAccess = "true"))
-	UMaterial* TransRedMat = nullptr;
+	UMaterial* UnsafeMat = nullptr;
 
 public:	
 	// Called every frame
@@ -45,9 +43,9 @@ private:
 	UFUNCTION()
 	void ApplyNewSafety();
 
-	UPROPERTY(EditInstanceOnly, meta=(AllowPrivateAccess="true"))
+	UPROPERTY(EditDefaultsOnly, meta=(AllowPrivateAccess="true"))
 	EColour Colour = EColour::RED;
 
-	UPROPERTY(ReplicatedUsing = ApplyNewSafety, EditInstanceOnly, meta=(AllowPrivateAccess="true"))
+	UPROPERTY(EditDefaultsOnly, meta=(AllowPrivateAccess="true"))
 	bool bIsSafe = false;
 };

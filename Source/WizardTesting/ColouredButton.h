@@ -43,6 +43,8 @@ private:
 	UFUNCTION()
 	void OnButtonHit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void UpdateButtonSafety(EColour SafeColour);
 
 	UPROPERTY(EditInstanceOnly, meta = (AllowPrivateAccess = "true"))
 	EColour Colour = EColour::RED;

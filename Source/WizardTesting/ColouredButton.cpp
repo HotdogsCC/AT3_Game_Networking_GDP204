@@ -52,19 +52,32 @@ void AColouredButton::Tick(float DeltaTime)
 
 void AColouredButton::OnButtonHit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	//dont do anything if we arent the server
 	if (!HasAuthority())
 	{
 		return;
 	}
 
+	//tell the server to update their colours
+	UpdateButtonSafety(Colour);
+
+	
+}
+
+void AColouredButton::UpdateButtonSafety_Implementation(EColour SafeColour)
+{
+	//for every coloured tile
 	for (AColouredTile* ColouredTile : ColouredTiles)
 	{
-		if (ColouredTile->GetColour() == Colour)
+		//is the tile the same colour as this button?
+		if (ColouredTile->GetColour() == SafeColour)
 		{
+			//it is now safe
 			ColouredTile->SetTileSafe();
 		}
 		else
 		{
+			//it is no longer safe
 			ColouredTile->SetTileUnsafe();
 		}
 	}
