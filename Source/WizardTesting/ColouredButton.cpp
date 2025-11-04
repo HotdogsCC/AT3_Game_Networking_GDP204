@@ -8,14 +8,14 @@
 // Sets default values
 AColouredButton::AColouredButton()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
+	//create the cube mesh
 	CubeStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>("Cube Mesh");
+	//assign the cube as the root of the object
 	CubeStaticMesh->SetupAttachment(RootComponent);
+	//create the button mesh
 	ButtonStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>("Button Mesh");
+	//set the button as a child to the cube
 	ButtonStaticMesh->SetupAttachment(CubeStaticMesh);
-
 }
 
 // Called when the game starts or when spawned
@@ -23,6 +23,7 @@ void AColouredButton::BeginPlay()
 {
 	Super::BeginPlay();
 
+	//setup delegate for button collision eveents
 	ButtonStaticMesh->OnComponentBeginOverlap.AddDynamic(this, &AColouredButton::OnButtonHit);
 
 	//find all coloured tiles
@@ -35,24 +36,19 @@ void AColouredButton::BeginPlay()
 		//try turn into a coloured tile
 		if (AColouredTile* ColouredTile = Cast<AColouredTile>(Actor))
 		{
+			//add the coloured tile to our perm reference
 			ColouredTiles.Add(ColouredTile);
 		}
 	}
 
+	//clear the temp array of actors
 	TempColouredTiles.Empty();
 	
 }
 
-// Called every frame
-void AColouredButton::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
 void AColouredButton::OnButtonHit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	//dont do anything if we arent the server
+	//don't do anything if we aren't the server
 	if (!HasAuthority())
 	{
 		return;
@@ -60,8 +56,6 @@ void AColouredButton::OnButtonHit(UPrimitiveComponent* OverlappedComponent, AAct
 
 	//tell the server to update their colours
 	UpdateButtonSafety(Colour);
-
-	
 }
 
 void AColouredButton::UpdateButtonSafety_Implementation(EColour SafeColour)

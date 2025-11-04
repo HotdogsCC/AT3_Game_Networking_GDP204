@@ -165,9 +165,7 @@ void AWizardCharacter::OnRepCurrentHealth()
 	//check the instance of the hud exists
 	if (!HUD_WidgetInstance)
 		return;
-
-	//update health
-	HUD_WidgetInstance->UpdateHealthUI(MaxHealth, CurrentHealth);
+	
 }
 
 // Called to bind functionality to input

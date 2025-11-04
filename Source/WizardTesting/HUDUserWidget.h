@@ -15,14 +15,11 @@ class WIZARDTESTING_API UHUDUserWidget : public UUserWidget
 	GENERATED_BODY()
 public:
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateHealthUI(int32 MaxHealth, int32 CurrentHealth);
-
-	UFUNCTION(BlueprintImplementableEvent)
 	void CannotFire();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void CanFire();
 
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION()
 	void HeadBob(float PlayerSpeed);
 };
