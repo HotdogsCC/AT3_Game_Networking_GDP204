@@ -2,8 +2,9 @@
 
 
 #include "ColouredButton.h"
-#include "ColouredTile.h"
 #include <Kismet/GameplayStatics.h>
+
+#include "TwoPlayerGameMode.h"
 
 // Sets default values
 AColouredButton::AColouredButton()
@@ -23,26 +24,10 @@ void AColouredButton::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//setup delegate for button collision eveents
+	//setup delegate for button collision events
 	ButtonStaticMesh->OnComponentBeginOverlap.AddDynamic(this, &AColouredButton::OnButtonHit);
 
-	//find all coloured tiles
-	TArray<AActor*> TempColouredTiles;
-	UGameplayStatics::GetAllActorsOfClass(this, AColouredTile::StaticClass(), TempColouredTiles);
-
-	//load them into the array
-	for (AActor* Actor : TempColouredTiles)
-	{
-		//try turn into a coloured tile
-		if (AColouredTile* ColouredTile = Cast<AColouredTile>(Actor))
-		{
-			//add the coloured tile to our perm reference
-			ColouredTiles.Add(ColouredTile);
-		}
-	}
-
-	//clear the temp array of actors
-	TempColouredTiles.Empty();
+	
 	
 }
 
@@ -55,24 +40,7 @@ void AColouredButton::OnButtonHit(UPrimitiveComponent* OverlappedComponent, AAct
 	}
 
 	//tell the server to update their colours
-	UpdateButtonSafety(Colour);
+	Cast<ATwoPlayerGameMode>(UGameplayStatics::GetGameMode(this))->ActivateColour(Colour);
 }
 
-void AColouredButton::UpdateButtonSafety_Implementation(EColour SafeColour)
-{
-	//for every coloured tile
-	for (AColouredTile* ColouredTile : ColouredTiles)
-	{
-		//is the tile the same colour as this button?
-		if (ColouredTile->GetColour() == SafeColour)
-		{
-			//it is now safe
-			ColouredTile->SetTileSafe();
-		}
-		else
-		{
-			//it is no longer safe
-			ColouredTile->SetTileUnsafe();
-		}
-	}
-}
+

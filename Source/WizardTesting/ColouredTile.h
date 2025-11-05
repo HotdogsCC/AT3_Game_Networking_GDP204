@@ -20,9 +20,11 @@ public:
 	EColour GetColour() const;
 
 	//allows players to walk on this tile
+	UFUNCTION(NetMulticast, Reliable)
 	void SetTileSafe();
 
 	//disables collision on the tile, preventing players from walking
+	UFUNCTION(NetMulticast, Reliable)
 	void SetTileUnsafe();
 
 protected:

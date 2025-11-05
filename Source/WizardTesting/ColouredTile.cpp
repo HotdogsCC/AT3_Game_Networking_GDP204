@@ -50,7 +50,7 @@ EColour AColouredTile::GetColour() const
 	return Colour;
 }
 
-void AColouredTile::SetTileSafe()
+void AColouredTile::SetTileSafe_Implementation()
 {
 	//set this tile as safe
 	bIsSafe = true;
@@ -58,7 +58,7 @@ void AColouredTile::SetTileSafe()
 	ApplyNewSafety();
 }
 
-void AColouredTile::SetTileUnsafe()
+void AColouredTile::SetTileUnsafe_Implementation()
 {
 	//set this tile as unsafe
 	bIsSafe = false;
