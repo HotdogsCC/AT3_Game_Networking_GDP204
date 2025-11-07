@@ -249,8 +249,8 @@ void AWizardCharacter::PrimaryFireServerRPC_Implementation()
 	//fire the projectile
 	bCanFire = false;
 	CanFireTimer = PrimarySpell.TimeBetweenShots;
-	bIsBursting = true;
-	CanBurstTimer = PrimarySpell.BurstModeTime;
+	bIsBursting = false;
+	//CanBurstTimer = PrimarySpell.BurstModeTime;
 	BurstCount = 0;
 	SpawnProjectile(ProjectileBP);
 
