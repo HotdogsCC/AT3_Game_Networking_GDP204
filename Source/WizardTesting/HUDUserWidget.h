@@ -21,9 +21,6 @@ public:
 	//when the widget is created
 	virtual void NativeConstruct() override;
 
-	//every update
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-
 	//when the player can no longer fire
 	UFUNCTION()
 	void CannotFire();

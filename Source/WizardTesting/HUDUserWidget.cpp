@@ -21,13 +21,6 @@ void UHUDUserWidget::NativeConstruct()
 	checkf(HandCanvasAsSlot, TEXT("Failed to cast HandCanvasSlot"));
 }
 
-void UHUDUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
-{
-	//bob the head
-	HeadBob(Player->GetPlayerSpeed());
-}
-
-
 void UHUDUserWidget::HeadBob(float PlayerSpeed)
 {
 	//get time in seconds

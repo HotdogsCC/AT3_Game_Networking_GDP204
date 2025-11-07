@@ -13,7 +13,7 @@ AWizardCharacter::AWizardCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	
-	//set max walk speed to walk speed definied in wizard BP
+	//set max walk speed to walk speed defined in wizard BP
 	if(UCharacterMovementComponent* MyCharacterMovement = GetCharacterMovement())
 	{
 		MyCharacterMovement->MaxWalkSpeed = WalkSpeed;
@@ -24,6 +24,33 @@ AWizardCharacter::AWizardCharacter()
 	}
 
 }
+
+// Called to bind functionality to input
+void AWizardCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	// set up action bindings
+	if(UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AWizardCharacter::OnMove);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AWizardCharacter::OnLook);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &AWizardCharacter::OnFire);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AWizardCharacter::OnStartSprint);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AWizardCharacter::OnStopSprint);
+	}
+
+}
+
+void AWizardCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(AWizardCharacter, bCanFire);
+}
+
 
 // Called when the game starts or when spawned
 void AWizardCharacter::BeginPlay()
@@ -36,9 +63,6 @@ void AWizardCharacter::BeginPlay()
 		GetMesh()->SetVisibility(false);
 	}
 
-	//set our local spawn location for when we die
-	SpawnLocation = GetActorLocation();
-
 	//make an instance of the projectile
 	if(AActor* ProjectileActorInstance = GetWorld()->SpawnActor(ProjectileBP))
 	{
@@ -46,15 +70,13 @@ void AWizardCharacter::BeginPlay()
 		if(AProjectileBase* TempProjectileBase = Cast<AProjectileBase>(ProjectileActorInstance))
 		{
 			//grab the projectile information
-			PrimarySpell.FireType = TempProjectileBase->GetFireType();
-			PrimarySpell.TimeBetweenShots = TempProjectileBase->GetTimeBetweenShots();
-			PrimarySpell.BurstModeTime = TempProjectileBase->GetBurstModeTime();
+			TimeBetweenShots = TempProjectileBase->GetTimeBetweenShots();
 		}
 		//destroy it
 		ProjectileActorInstance->Destroy();
 	}
 
-	//set max walk speed to walk speed definied in wizard BP
+	//set max walk speed to walk speed defined in wizard BP
 	if(UCharacterMovementComponent* MyCharacterMovement = GetCharacterMovement())
 	{
 		MyCharacterMovement->MaxWalkSpeed = WalkSpeed;
@@ -64,10 +86,10 @@ void AWizardCharacter::BeginPlay()
 		UE_LOG(LogTemp, Warning, TEXT("failed to set character movement in constructor"));
 	}
 
-	CurrentHealth = MaxHealth;
-
+	//grab the hud class
 	if(HUD_Widget)
 	{
+		//make the hud
 		UUserWidget* TempWidget = CreateWidget(Cast<APlayerController>(GetController()), HUD_Widget);
 		HUD_WidgetInstance = Cast<UHUDUserWidget>(TempWidget);
 		if(HUD_WidgetInstance)
@@ -98,7 +120,6 @@ void AWizardCharacter::Tick(float DeltaTime)
 		return;
 
 	TickFire(DeltaTime);
-	TickBurst(DeltaTime);
 	
 	
 }
@@ -112,38 +133,12 @@ void AWizardCharacter::TickFire(float DeltaTime)
 		if(CanFireTimer <= 0.0f)
 		{
 			bCanFire = true;
-			OnRepCanFire();
+			UpdateHUD();
 		}
 	}
 }
 
-void AWizardCharacter::TickBurst(float DeltaTime)
-{
-	//are we currently bursting?
-	if(!bIsBursting)
-		return;
-
-	//decrement timer
-	CanBurstTimer -= DeltaTime;
-
-	//has the timer finished ticking?
-	if(CanBurstTimer <= 0.0f)
-	{
-		//spawn projectile
-		SpawnProjectile(ProjectileBP);
-		BurstCount++;
-		if(BurstCount > 1)
-		{
-			bIsBursting = false;
-		}
-		else
-		{
-			CanBurstTimer = PrimarySpell.BurstModeTime;
-		}
-	}
-}
-
-void AWizardCharacter::OnRepCanFire()
+void AWizardCharacter::UpdateHUD()
 {
 	//check the instance of the hud exists
 	if (!HUD_WidgetInstance)
@@ -160,31 +155,41 @@ void AWizardCharacter::OnRepCanFire()
 	}
 }
 
-void AWizardCharacter::OnRepCurrentHealth()
+void AWizardCharacter::SpawnProjectile(UClass* ProjectileToSpawn)
 {
-	//check the instance of the hud exists
-	if (!HUD_WidgetInstance)
-		return;
-	
-}
+	//get camera transform
+	FVector CameraLocation;
+	FRotator CameraRotation;
+	Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
+	FVector End = CameraLocation + (CameraRotation.Vector() * 20000.0f);
 
-// Called to bind functionality to input
-void AWizardCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	//set up for trace
+	FHitResult HitResult;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
 
-	// set up action bindings
-	if(UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+	//do the trace
+	bool bHit = GetWorld()->LineTraceSingleByChannel(
+		HitResult,
+		CameraLocation,
+		End,
+		ECC_WorldStatic,
+		QueryParams
+		);
+
+	//if we hit something
+	if(bHit)
 	{
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AWizardCharacter::OnMove);
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AWizardCharacter::OnLook);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-		EnhancedInputComponent->BindAction(PrimaryFireAction, ETriggerEvent::Started, this, &AWizardCharacter::OnPrimaryFire);
-		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AWizardCharacter::OnStartSprint);
-		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AWizardCharacter::OnStopSprint);
-	}
+		AProjectileBase* ProjectileInstance = GetWorld()->SpawnActor<AProjectileBase>(ProjectileToSpawn);
 
+		ProjectileInstance->SetActorLocation(GetActorLocation());
+		ProjectileInstance->SetActorRotation(GetActorRotation());
+		
+		ProjectileInstance->SetWizardOwner(this);
+		ProjectileInstance->SetTarget(HitResult.Location);
+		
+		ProjectileInstance->StartDetectingCollisions();
+	}
 }
 
 void AWizardCharacter::OnMove(const FInputActionValue& Value)
@@ -223,41 +228,6 @@ void AWizardCharacter::OnLook(const FInputActionValue& Value)
 	}
 }
 
-void AWizardCharacter::OnPrimaryFire()
-{
-	PrimaryFireServerRPC();
-}
-
-void AWizardCharacter::PrimaryFireServerRPC_Implementation()
-{
-	//check that there is a projectile to spawn
-	if (!ProjectileBP)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, "no projectile set to spawn");
-		return;
-	}
-
-	//check we have authority
-	if (!HasAuthority())
-		return;
-
-
-	//check we can shoot
-	if (!bCanFire)
-		return;
-
-	//fire the projectile
-	bCanFire = false;
-	CanFireTimer = PrimarySpell.TimeBetweenShots;
-	bIsBursting = false;
-	//CanBurstTimer = PrimarySpell.BurstModeTime;
-	BurstCount = 0;
-	SpawnProjectile(ProjectileBP);
-
-	//refresh the hud
-	OnRepCanFire();
-}
-
 void AWizardCharacter::OnStartSprint()
 {
 	//update server
@@ -282,32 +252,36 @@ void AWizardCharacter::OnStopSprint()
 	
 }
 
-void AWizardCharacter::TakeDamage(int32 DamageTaken)
+void AWizardCharacter::OnFire()
 {
-	//remove the taken damage from health
-	CurrentHealth -= DamageTaken;
-
-	//check if the wizard should die
-	if(CurrentHealth <= 0)
-	{
-		//die
-		UE_LOG(LogTemp, Warning, TEXT("buddy is out of health and should die"));
-		SetActorLocation(SpawnLocation);
-		CurrentHealth = MaxHealth;
-	}
-
-	//refresh
-	OnRepCurrentHealth();
-	
+	PrimaryFireServerRPC();
 }
 
-
-void AWizardCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void AWizardCharacter::PrimaryFireServerRPC_Implementation()
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	//check that there is a projectile to spawn
+	if (!ProjectileBP)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, "no projectile set to spawn");
+		return;
+	}
 
-	DOREPLIFETIME(AWizardCharacter, CurrentHealth);
-	DOREPLIFETIME(AWizardCharacter, bCanFire);
+	//check we have authority
+	if (!HasAuthority())
+		return;
+
+
+	//check we can shoot
+	if (!bCanFire)
+		return;
+
+	//fire the projectile
+	bCanFire = false;
+	CanFireTimer = TimeBetweenShots;
+	SpawnProjectile(ProjectileBP);
+
+	//refresh the hud
+	OnRepCanFire();
 }
 
 void AWizardCharacter::UpdateSprintRPC_Implementation(float NewSpeed)
@@ -321,44 +295,9 @@ void AWizardCharacter::UpdateSprintRPC_Implementation(float NewSpeed)
 	}
 }
 
-void AWizardCharacter::SpawnProjectile(UClass* ProjectileToSpawn)
+void AWizardCharacter::OnRepCanFire()
 {
-	//get camera transform
-	FVector CameraLocation;
-	FRotator CameraRotation;
-	Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
-	FVector End = CameraLocation + (CameraRotation.Vector() * 20000.0f);
-
-	//set up for trace
-	FHitResult HitResult;
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this);
-
-	//do the trace
-	bool bHit = GetWorld()->LineTraceSingleByChannel(
-		HitResult,
-		CameraLocation,
-		End,
-		ECC_WorldStatic,
-		QueryParams
-		);
-
-	//if we hit something
-	if(bHit)
-	{
-		AActor* ProjectileInstance = GetWorld()->SpawnActor(ProjectileToSpawn);
-		//spawns projectile where player is
-		ProjectileInstance->SetActorLocation(GetActorLocation());
-		//rotates projectile in the direction the player is looking
-		ProjectileInstance->SetActorRotation(GetControlRotation());
-		//get projectile base cpp
-		if(AProjectileBase* ProjectileComponent = Cast<AProjectileBase>(ProjectileInstance))
-		{
-			ProjectileComponent->SetWizardOwner(this);
-			ProjectileComponent->SetTarget(HitResult.Location);
-				
-		}
-	}
+	UpdateHUD();
 }
 
 float AWizardCharacter::GetPlayerSpeed() const

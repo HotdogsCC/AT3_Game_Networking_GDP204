@@ -7,16 +7,7 @@
 #include "ProjectileBase.generated.h"
 
 
-class AWizardCharacter;
 class UPointLightComponent;
-
-UENUM()
-enum class EFireType : uint8
-{
-	Single,
-	Burst,
-	Automatic
-};
 
 
 UCLASS()
@@ -27,51 +18,34 @@ class WIZARDTESTING_API AProjectileBase : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AProjectileBase();
+	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	// called to enable collisions
+	UFUNCTION()
+	void StartDetectingCollisions() const;
+
+	// called to get the time between each shot
+	UFUNCTION()
+	float GetTimeBetweenShots() const;
+
+	// used for where the spell should travel to 
+	void SetTarget(const FVector& InTargetLocation);
+
+	// sets a reference of who spawned us
+	UFUNCTION()
+	void SetWizardOwner(AActor* Wizard);
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// used for where the spell should travel to 
-	void SetTarget(FVector TargetLocation);
-
-	UFUNCTION(BlueprintCallable)
-	AWizardCharacter* GetWizardOwner() const;
-		
-	void SetWizardOwner(AWizardCharacter* Wizard);
-
-	UFUNCTION(BlueprintCallable)
-	bool GetReady() const;
-
-	UFUNCTION(BlueprintCallable)
-	int32 GetDamage() const;
-
-	UFUNCTION(BlueprintCallable)
-	int32 GetMagicCollisionDamage() const;
-
-	UFUNCTION()
-	EFireType GetFireType() const;
-
-	UFUNCTION()
-	float GetTimeBetweenShots() const;
-
-	UFUNCTION()
-	float GetBurstModeTime() const;
-
-	UFUNCTION(BlueprintCallable)
-	bool GetExplosive() const;
-
-	UFUNCTION(BlueprintCallable)
-	float GetExplosiveRadius() const;
-
-private:
+	//the mesh of this projectile
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* MeshComponent;
 
+	//the light object in the projectile
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UPointLightComponent* LightComponent;
 
@@ -87,22 +61,25 @@ private:
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
 	float Curviness = 0.0f;
 
-	//how much damage the projectile deals
+	//time between each projectile to spawn
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-	int32 Damage = 10;
+	float TimeBetweenShots = 1.0f;
 
-	//the damage that occurs when two projectiles collide
+	//the particles spawned when this projectile explode
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-	int32 MagicCollisionDamage = 20;
+	TSubclassOf<AActor> ExplodeParticles = nullptr;
 
-	//whether the projectile should cause a big boom
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-	bool bExplosive = false;
+private:
+	//when we collide with something
+	UFUNCTION()
+	void OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-	float ExplosiveRadius = 300.0f;
-
-	//the initial distance from its spawn to the target
+	//returns the output of a parabola used for the projectile's curve
+	UFUNCTION()
+	float GetCurveAdditive(float Input) const;
+	
+	//the initial distance between where this projectile spawns and its target
 	UPROPERTY()
 	float InitDistance;
 	
@@ -114,36 +91,21 @@ private:
 	UPROPERTY()
 	FVector TargetDirection;
 
-	UFUNCTION()
-	float GetCurveAdditive(float input);
-
-	//where the orb just was
+	//where this projectile was last frame
 	UPROPERTY()
 	FVector PreviousLocation;
 
+	//the direction in which the projectile should curve
 	UPROPERTY()
 	FVector CurveDirection;
 
+	//whether this projectile has reached the destination it was aiming for
 	UPROPERTY()
-	bool bTargetReached;
+	bool bTargetReached = false;
 
 	//the character actor who spawned the projectile
 	UPROPERTY()
-	AWizardCharacter* WizardOwner;
-
-	//whether the projectile should care about collisions
-	UPROPERTY()
-	bool bReady;
-
-	//the kind of fire mode of the projectile
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-	EFireType FireType;
-
-	//time between each projectile to spawn
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-	float TimeBetweenShots = 1.0f;
-
-	//time between each projectile to spawn for bursts
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-	float BurstModeTime = 0.1f;
+	AActor* WizardOwner;
+	
+	
 };

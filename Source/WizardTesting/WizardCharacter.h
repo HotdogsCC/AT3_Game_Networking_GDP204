@@ -16,10 +16,8 @@ USTRUCT()
 struct FSpell
 {
 	GENERATED_BODY()
-
-	EFireType FireType;
-	float TimeBetweenShots;
-	float BurstModeTime;
+	
+	
 };
 
 UCLASS()
@@ -30,44 +28,35 @@ class WIZARDTESTING_API AWizardCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	AWizardCharacter();
+	
+	// Called to bind functionality to input
+    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	// called to set which variables replicate over the network
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	// returns the speed of the player; used 
+	UFUNCTION(BlueprintCallable)
+	float GetPlayerSpeed() const;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	//Projectile Blueprint
+	UPROPERTY(EditDefaultsOnly, Category = "Projectiles", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AProjectileBase> ProjectileBP;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	//Sprint and walk speeds
+	UPROPERTY(EditDefaultsOnly, Category = "Player Attributes", meta = (AllowPrivateAccess = "true"))
+	float WalkSpeed;
+	UPROPERTY(EditDefaultsOnly, Category = "Player Attributes", meta = (AllowPrivateAccess = "true"))
+	float SprintSpeed;
 
-	UFUNCTION(BlueprintCallable)
-	void TakeDamage(int32 DamageTaken);
-
-	UFUNCTION(BlueprintCallable)
-	float GetPlayerSpeed() const;
-
-private:
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	
-	//Input Functions
-	UFUNCTION()
-	void OnMove(const FInputActionValue& Value);
-
-	UFUNCTION()
-	void OnLook(const FInputActionValue& Value);
-
-	UFUNCTION()
-	void OnStartSprint();
-
-	UFUNCTION()
-	void OnStopSprint();
-
-	UFUNCTION()
-	void OnPrimaryFire();
-	
-	//Input actions
+	// --- Input actions ---
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
 	UInputAction* MoveAction;
 
@@ -81,15 +70,41 @@ private:
 	UInputAction* SprintAction;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
-	UInputAction* PrimaryFireAction;
+	UInputAction* FireAction;
 
+	// widget to create for the hud
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UUserWidget> HUD_Widget;
 
-	UPROPERTY()
-	UHUDUserWidget* HUD_WidgetInstance;
-	
+private:
+	//updates logic for fire timings
+	UFUNCTION()
+	void TickFire(float DeltaTime);
 
+	//creates a projectile 
+	UFUNCTION()
+	void SpawnProjectile(UClass* ProjectileToSpawn);
+
+	//updates the hud to reflect the current firing state
+	UFUNCTION()
+	void UpdateHUD();
+	
+	// --- Input functions ---
+	UFUNCTION()
+	void OnMove(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void OnLook(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void OnStartSprint();
+
+	UFUNCTION()
+	void OnStopSprint();
+
+	UFUNCTION()
+	void OnFire();
+	
 	//RPC Primary Fire
 	UFUNCTION(Server, Reliable)
 	void PrimaryFireServerRPC();
@@ -98,63 +113,24 @@ private:
 	UFUNCTION(Server, Reliable)
 	void UpdateSprintRPC(float NewSpeed);
 
-	//Projectile Blueprints
-	UPROPERTY(EditDefaultsOnly, Category = "Projectiles", meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<AProjectileBase> ProjectileBP;
+	//when bCanFire updates over the network
+	UFUNCTION()
+	void OnRepCanFire();
 
-	//Sprint and walk speeds
-	UPROPERTY(EditDefaultsOnly, Category = "Player Attributes", meta = (AllowPrivateAccess = "true"))
-	float WalkSpeed;
-	UPROPERTY(EditDefaultsOnly, Category = "Player Attributes", meta = (AllowPrivateAccess = "true"))
-	float SprintSpeed;
-
-	//How much health the wizard starts with
-	UPROPERTY(EditDefaultsOnly, Category = "Player Attributes", meta = (AllowPrivateAccess = "true"))
-	int32 MaxHealth;
-	
-	//How much health they currently have
-	UPROPERTY(ReplicatedUsing=OnRepCurrentHealth)
-	int32 CurrentHealth;
-	
-	//temp for instant respawn
-	UPROPERTY()
-	FVector SpawnLocation;
-
-	//information about the primary spell type
-	UPROPERTY()
-	FSpell PrimarySpell;
-
+	//whether this player can currently shoot
 	UPROPERTY(ReplicatedUsing=OnRepCanFire)
 	bool bCanFire = true;
+	
+	//the time between each projectile being fired
+	UPROPERTY()
+	float TimeBetweenShots;
 
+	//the elapsed time since the last shot
 	UPROPERTY()
 	float CanFireTimer;
 
+	//reference to the current hud instance
 	UPROPERTY()
-	float CanSecondaryFireTimer;
-
-	UPROPERTY()
-	bool bIsBursting = false;
-	
-	UPROPERTY()
-	float CanBurstTimer;
-
-	UPROPERTY()
-	uint8 BurstCount;
-
-	UFUNCTION()
-	void TickFire(float DeltaTime);
-
-	UFUNCTION()
-	void TickBurst(float DeltaTime);
-	
-	UFUNCTION()
-	void SpawnProjectile(UClass* ProjectileToSpawn);
-
-	UFUNCTION()
-	void OnRepCurrentHealth();
-
-	UFUNCTION()
-	void OnRepCanFire();
+	UHUDUserWidget* HUD_WidgetInstance = nullptr;
 
 };
