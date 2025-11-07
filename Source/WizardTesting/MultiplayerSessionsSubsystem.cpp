@@ -2,6 +2,7 @@
 
 #include "MultiplayerSessionsSubsystem.h"
 #include "OnlineSubsystem.h"
+#include "OnlineSubsystemUtils.h"
 #include "Online/OnlineSessionNames.h"
 
 //shortcut for printing a message on the viewport
@@ -60,29 +61,33 @@ void UMultiplayerSessionsSubsystem::Deinitialize()
 //when the user creates a server
 void UMultiplayerSessionsSubsystem::CreateServer(FString ServerName)
 {
-	PrintString("Creating Server");
-
+	//is the server name empty?
 	if(ServerName.IsEmpty())
 	{
+		//is there a valid reference to the main menu UI?
 		if (MainMenuWidget)
 		{
-			MainMenuWidget->CreatedServerWithNoName();
+			//update UI to display error
+			FText ErrorMessage = FText::FromString("Server must contain a name");
+			MainMenuWidget->SetErrorMessage(ErrorMessage);
 		}
-		PrintString("Server name cannot be empty");
+		
+		//tell UI that it failed
 		ServerCreateDel.Broadcast(false);
 		return;
 	}
-
-	FNamedOnlineSession* ExistingSession = SessionInterface->GetNamedSession(MySessionName);
-	if(ExistingSession)
+	
+	//is there already a session with this name?
+	if(FNamedOnlineSession* ExistingSession = SessionInterface->GetNamedSession(MySessionName))
 	{
-		PrintString("session already exists, destroying it.");
+		//destroy it
 		bCreateServerAfterDestroy = true;
 		DestroyServerName = ServerName;
 		SessionInterface->DestroySession(MySessionName);
 		return;
 	}
-	
+
+	//setup settings for this session
 	FOnlineSessionSettings SessionSettings;
 	SessionSettings.bAllowJoinInProgress = true;
 	SessionSettings.bIsDedicated = false;
@@ -91,9 +96,11 @@ void UMultiplayerSessionsSubsystem::CreateServer(FString ServerName)
 	SessionSettings.bUseLobbiesIfAvailable = true;
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.bAllowJoinViaPresence = true;
-	
-	if(IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get())
+
+	//grab the online subsystem
+	if(IOnlineSubsystem* OnlineSubsystem = Online::GetSubsystem(GetWorld()))
 	{
+		//are we actually online?
 		FString SubsystemName = OnlineSubsystem->GetSubsystemName().ToString();
 		if(SubsystemName.Equals("NULL"))
 		{
@@ -105,59 +112,71 @@ void UMultiplayerSessionsSubsystem::CreateServer(FString ServerName)
 		}
 	}
 
+	//set the server name from what the player provided
 	SessionSettings.Set(FName("SERVER_NAME"), ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-	
+
+	//make the server
 	SessionInterface->CreateSession(0, MySessionName, SessionSettings);
 }
 
 void UMultiplayerSessionsSubsystem::JoinServer(FString ServerName)
 {
-	PrintString("Joining Server");
-
+	//is the server name empty?
 	if(ServerName.IsEmpty())
 	{
-		PrintString("Server Name cannot be empty");
+		//check the main menu UI is valid
 		if (MainMenuWidget)
 		{
-			MainMenuWidget->CreatedServerWithNoName();
+			//set the error message
+			FText ErrorMessage = FText::FromString("Server must contain a name");
+			MainMenuWidget->SetErrorMessage(ErrorMessage);
 		}
+		//tell UI that there was an error
 		ServerCreateDel.Broadcast(false);
 		return;
 	}
 
+	//make a struct for session search settings
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
-	bool IsLAN = false;
-	if(IOnlineSubsystem::Get()->GetSubsystemName() == "NULL")
+
+	//are we actually online?
+	bool bIsLAN = false;
+	if(Online::GetSubsystem(GetWorld())->GetSubsystemName() == "NULL")
 	{
-		IsLAN = true;
+		bIsLAN = true;
 	}
-	SessionSearch->bIsLanQuery = IsLAN;
+
+	//set session search settings
+	SessionSearch->bIsLanQuery = bIsLAN;
 	SessionSearch->MaxSearchResults = 9999;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 
+	//set the name of the server to search for
 	ServerNameToFind = ServerName;
-	
+
+	//search for it
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
 }
 
 void UMultiplayerSessionsSubsystem::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {
-	PrintString(FString::Printf(TEXT("On create session complete: %d"), bWasSuccessful));
-
+	//tell UI the status of the server creation
 	ServerCreateDel.Broadcast(bWasSuccessful);
-	
+
+	//was it created?
 	if(bWasSuccessful)
 	{
+		//load the game level
 		GetWorld()->ServerTravel("/Game/TwoPlayerGame?listen");
 	}
 }
 
 void UMultiplayerSessionsSubsystem::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
 {
-	PrintString(FString::Printf(TEXT("On destroy session complete: %d"), bWasSuccessful));
-
+	//was the server destroyed?
 	if(bCreateServerAfterDestroy)
 	{
+		//create the server in the same name
 		bCreateServerAfterDestroy = false;
 		CreateServer(DestroyServerName);
 	}
@@ -165,89 +184,99 @@ void UMultiplayerSessionsSubsystem::OnDestroySessionComplete(FName SessionName, 
 
 void UMultiplayerSessionsSubsystem::OnFindSessionsComplete(bool bWasSuccessful)
 {
+	//report to the UI the successfulness
 	ServerCreateDel.Broadcast(bWasSuccessful);
+
+	//did it fail?
 	if(!bWasSuccessful)
 	{
-		
+		//do nothing more
 		return;
 	}
 
+	//is the server name empty?
 	if(ServerNameToFind.IsEmpty())
 	{
+		//do nothing more
 		return;
 	}
 
+	//grab an array of all servers that fit the search criteria
 	TArray<FOnlineSessionSearchResult> Results = SessionSearch->SearchResults;
 	FOnlineSessionSearchResult* CorrectResult = nullptr;
-	
+
+	//are there any results?
 	if(Results.Num() > 0)
 	{
-		PrintString("Successfully found some servers");
-
+		//for each result
 		for(FOnlineSessionSearchResult Result : Results)
 		{
+			//is the result actually valid?
 			if(Result.IsValid())
 			{
-				FString ServerName = "No-name";
+				//grab the server name
+				FString ServerName = "Temp-no-name";
 				Result.Session.SessionSettings.Get(FName("SERVER_NAME"), ServerName);
 
+				//is this the name we are trying to find?
 				if(ServerName.Equals(ServerNameToFind))
 				{
+					//store this result as the correct one
 					CorrectResult = &Result;
-					PrintString(ServerName);
 					break;
 				}
 			}
 		}
 
+		//was a correct result found?
 		if(CorrectResult)
 		{
+			//join that server
 			SessionInterface->JoinSession(0, MySessionName, *CorrectResult);
-		}
-		else
-		{
-			PrintString("Couldn't find server");
-			ServerNameToFind = "";
-			ServerCreateDel.Broadcast(false);
+			return;
 		}
 	}
-	else
+	
+	//tell the server it failed to join
+	if (MainMenuWidget)
 	{
-		PrintString("no servers found");
-		ServerCreateDel.Broadcast(false);
+		FText ErrorMessage = FText::FromString("Server was not found");
+		MainMenuWidget->SetErrorMessage(ErrorMessage);
 	}
+	ServerCreateDel.Broadcast(false);
 	
 }
 
 void UMultiplayerSessionsSubsystem::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
+	//was the server joined successfully?
 	if(Result == EOnJoinSessionCompleteResult::Success)
 	{
-		PrintString("Successfully joined session");
-
+		//try to get address 
 		FString Address = "";
-		bool bSuccess = SessionInterface->GetResolvedConnectString(MySessionName, Address);
-		if(bSuccess)
+		if(SessionInterface->GetResolvedConnectString(MySessionName, Address))
 		{
-			PrintString("address worked");
-			APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
-			if(PlayerController)
+			//grab the player controller
+			if(APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController())
 			{
+				//send the player to the server
 				PlayerController->ClientTravel(Address, TRAVEL_Absolute);
+				return;
 			}
 		}
-		else
-		{
-			PrintString("getresolvedconnectstring returned false");
-		}
 	}
-	else
+	
+	//tell the UI it failed to join
+	if (MainMenuWidget)
 	{
-		PrintString("OnJoinSessionComplete failed");
+		FText ErrorMessage = FText::FromString("Failed to connect to Server");
+		MainMenuWidget->SetErrorMessage(ErrorMessage);
 	}
+	ServerCreateDel.Broadcast(false);
 }
 
 void UMultiplayerSessionsSubsystem::AddMainMenuWidget(UMainMenuWidget* inWidget)
 {
+	//set this reference to the main menu HUD
 	MainMenuWidget = inWidget;
 }

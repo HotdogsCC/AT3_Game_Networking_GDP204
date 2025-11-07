@@ -5,22 +5,24 @@
 
 #include "MultiplayerSessionsSubsystem.h"
 #include "OnlineSubsystem.h"
+#include "OnlineSubsystemUtils.h"
 
 void UMainMenuWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	//give the subsystem a reference to the this
 	GetGameInstance()->GetSubsystem<UMultiplayerSessionsSubsystem>()->AddMainMenuWidget(this);
 }
 
 
 bool UMainMenuWidget::IsSteamWorking() const
 {
-	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
-	if (OnlineSubsystem)
+	//grab the subsystem
+	if (const IOnlineSubsystem* OnlineSubsystem = Online::GetSubsystem(GetWorld()))
 	{
-		FString SubsystemName = OnlineSubsystem->GetSubsystemName().ToString();
-		if (SubsystemName.Equals("STEAM"))
+		//are we using steam?
+		if (OnlineSubsystem->GetSubsystemName().ToString().Equals("STEAM"))
 		{
 			return true;
 		}
