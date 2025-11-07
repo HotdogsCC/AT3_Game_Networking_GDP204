@@ -42,12 +42,19 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetPlayerSpeed() const;
 
+	UFUNCTION(BlueprintCallable)
+	bool GetShouldThrowAnimation();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	//the mesh for the fireball
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* ProjectileMesh = nullptr;
+
 	//Projectile Blueprint
-	UPROPERTY(EditDefaultsOnly, Category = "Projectiles", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, Category = "Projectiles", meta = (AllowPrivateAccess = "true")) 
 	TSubclassOf<AProjectileBase> ProjectileBP;
 
 	//Sprint and walk speeds
@@ -113,6 +120,12 @@ private:
 	UFUNCTION(Server, Reliable)
 	void UpdateSprintRPC(float NewSpeed);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayThrowAnimation();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void FireRecharged();
+
 	//when bCanFire updates over the network
 	UFUNCTION()
 	void OnRepCanFire();
@@ -120,6 +133,10 @@ private:
 	//whether this player can currently shoot
 	UPROPERTY(ReplicatedUsing=OnRepCanFire)
 	bool bCanFire = true;
+
+	//whether the animation should play the throw animation
+	UPROPERTY()
+	bool bShouldThrowAnimation = false;
 	
 	//the time between each projectile being fired
 	UPROPERTY()

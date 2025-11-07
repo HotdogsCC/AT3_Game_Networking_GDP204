@@ -23,6 +23,10 @@ AWizardCharacter::AWizardCharacter()
 		UE_LOG(LogTemp, Warning, TEXT("failed to set character movement in constructor"));
 	}
 
+	//setup projectile mesh
+	ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>("Projectile Mesh");
+	ProjectileMesh->SetupAttachment(GetMesh(), "LeftHand");
+
 }
 
 // Called to bind functionality to input
@@ -56,6 +60,8 @@ void AWizardCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void AWizardCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	ProjectileMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("LeftHand"));
 
 	//hide the mesh if it is ours
 	if (IsLocallyControlled())
@@ -132,8 +138,7 @@ void AWizardCharacter::TickFire(float DeltaTime)
 		CanFireTimer -= DeltaTime;
 		if(CanFireTimer <= 0.0f)
 		{
-			bCanFire = true;
-			UpdateHUD();
+			FireRecharged();
 		}
 	}
 }
@@ -257,6 +262,21 @@ void AWizardCharacter::OnFire()
 	PrimaryFireServerRPC();
 }
 
+void AWizardCharacter::FireRecharged_Implementation()
+{
+	bCanFire = true;
+
+	//show the mesh if it isn't our character
+	if (!IsLocallyControlled())
+	{
+		ProjectileMesh->SetVisibility(true);
+	}
+	
+	
+	UpdateHUD();
+}
+
+
 void AWizardCharacter::PrimaryFireServerRPC_Implementation()
 {
 	//check that there is a projectile to spawn
@@ -280,8 +300,11 @@ void AWizardCharacter::PrimaryFireServerRPC_Implementation()
 	CanFireTimer = TimeBetweenShots;
 	SpawnProjectile(ProjectileBP);
 
+	//allow animation to play
+	PlayThrowAnimation();
+
 	//refresh the hud
-	OnRepCanFire();
+	UpdateHUD();
 }
 
 void AWizardCharacter::UpdateSprintRPC_Implementation(float NewSpeed)
@@ -295,6 +318,16 @@ void AWizardCharacter::UpdateSprintRPC_Implementation(float NewSpeed)
 	}
 }
 
+void AWizardCharacter::PlayThrowAnimation_Implementation()
+{
+	//allow the animation blueprint to transition
+	bShouldThrowAnimation = true;
+
+	//disable static mesh
+	ProjectileMesh->SetVisibility(false);
+}
+
+
 void AWizardCharacter::OnRepCanFire()
 {
 	UpdateHUD();
@@ -303,4 +336,17 @@ void AWizardCharacter::OnRepCanFire()
 float AWizardCharacter::GetPlayerSpeed() const
 {
 	return GetVelocity().Length();
+}
+
+bool AWizardCharacter::GetShouldThrowAnimation()
+{
+	if (bShouldThrowAnimation)
+	{
+		// they should throw this frame, and not until the next projectile
+		bShouldThrowAnimation = false;
+		return true;
+	}
+
+	//dont play throw animation
+	return false;
 }
