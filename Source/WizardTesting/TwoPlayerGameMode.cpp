@@ -5,6 +5,7 @@
 
 #include "ColouredButton.h"
 #include "ColouredTile.h"
+#include "WizardCharacter.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -95,3 +96,32 @@ void ATwoPlayerGameMode::ActivateColour(EColour NewColour)
 		}
 	}
 }
+
+
+void ATwoPlayerGameMode::ServerPlayerDied()
+{
+	ServerDeaths++;
+	RefreshPlayerHUDs();
+}
+
+void ATwoPlayerGameMode::ClientPlayerDied()
+{
+	ClientDeaths++;
+	RefreshPlayerHUDs();
+}
+
+void ATwoPlayerGameMode::RefreshPlayerHUDs()
+{
+	TArray<AActor*> Players;
+	UGameplayStatics::GetAllActorsOfClass(this, AWizardCharacter::StaticClass(), Players);
+
+	for (auto Player : Players)
+	{
+		if (AWizardCharacter* Wizard = Cast<AWizardCharacter>(Player))
+		{
+			Wizard->RefreshHUD(ServerDeaths, ClientDeaths);
+		}
+	}
+}
+
+

@@ -7,6 +7,7 @@
 #include "HUDUserWidget.generated.h"
 
 class UImage;
+class UTextBlock;
 class UCanvasPanel;
 class UCanvasPanelSlot;
 class AWizardCharacter;
@@ -33,6 +34,10 @@ public:
 	UFUNCTION()
 	void HeadBob(float PlayerSpeed);
 
+	//updates scoreboard
+	UFUNCTION()
+	void SetDeaths(int32 ServerDeaths, int32 TheirDeaths);
+
 protected:
 	//the canvas containing the hands
 	UPROPERTY(meta=(BindWidget))
@@ -41,6 +46,14 @@ protected:
 	//the image slot for the left hand
 	UPROPERTY(meta=(BindWidget))
 	UImage* LeftHand = nullptr;
+
+	//the text for our deaths
+	UPROPERTY(meta=(BindWidget))
+	UTextBlock* YourDeathText = nullptr;
+
+	//the text for their deaths
+	UPROPERTY(meta=(BindWidget))
+	UTextBlock* TheirDeathText = nullptr;
 
 	//the texture of the hand holding fire
 	UPROPERTY(EditAnywhere, meta=(AllowPrivateAccess="true"))
@@ -52,7 +65,7 @@ protected:
 
 	//the texture of the hand casting the magic
 	UPROPERTY(EditAnywhere, meta=(AllowPrivateAccess="true"))
-	UTexture2D* HandCastingFire;
+	UTexture2D* HandCastingFire; 
 
 private:
 	//called shortly after CannotFire; makes hud transition from casting to holding nothing

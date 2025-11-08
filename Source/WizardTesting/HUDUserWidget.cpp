@@ -6,6 +6,7 @@
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
+#include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 
 void UHUDUserWidget::NativeConstruct()
@@ -67,9 +68,23 @@ void UHUDUserWidget::CannotFire()
 		&UHUDUserWidget::FinishCasting, 0.5f, false);
 }
 
+void UHUDUserWidget::SetDeaths(int32 OurDeaths, int32 TheirDeaths)
+{
+	FString YourDeathString = "Your Deaths: ";
+	YourDeathString.AppendInt(OurDeaths);
+
+	FString TheirDeathString = "Their Deaths: ";
+	TheirDeathString.AppendInt(TheirDeaths);
+	
+	YourDeathText->SetText(FText::FromString(YourDeathString));
+	TheirDeathText->SetText(FText::FromString(TheirDeathString));
+}
+
+
+
+
 void UHUDUserWidget::FinishCasting() const
 {
 	//make the ui show an empty hand
 	LeftHand->SetBrushFromTexture(HandWithNoFire);
 }
-

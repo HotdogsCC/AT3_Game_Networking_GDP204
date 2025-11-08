@@ -307,6 +307,30 @@ void AWizardCharacter::PrimaryFireServerRPC_Implementation()
 	UpdateHUD();
 }
 
+void AWizardCharacter::RefreshHUD_Implementation(int32 ServerDeaths, int32 ClientDeaths)
+{
+	if (HUD_WidgetInstance)
+	{
+		int32 OurDeaths = ServerDeaths;
+		int32 TheirDeaths = ClientDeaths;
+		
+		//are we the server?
+		if (HasAuthority())
+		{
+			OurDeaths = ServerDeaths;
+			TheirDeaths = ClientDeaths;
+		}
+		else
+		{
+			OurDeaths = ClientDeaths;
+			TheirDeaths = ServerDeaths;
+		}
+		
+		HUD_WidgetInstance->SetDeaths(OurDeaths, TheirDeaths);
+	}
+}
+
+
 void AWizardCharacter::UpdateSprintRPC_Implementation(float NewSpeed)
 {
 	if(HasAuthority())
@@ -326,6 +350,7 @@ void AWizardCharacter::PlayThrowAnimation_Implementation()
 	//disable static mesh
 	ProjectileMesh->SetVisibility(false);
 }
+
 
 
 void AWizardCharacter::OnRepCanFire()

@@ -6,6 +6,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "TwoPlayerGameMode.generated.h"
 
+class AWizardCharacter;
 class AColouredTile;
 enum class EColour : uint8;
 /**
@@ -25,9 +26,19 @@ public:
 
 	//activates one colour, and deactivates the oldest colour
 	UFUNCTION()
-	void ActivateColour(EColour NewColour); 
+	void ActivateColour(EColour NewColour);
+
+	//called when a player dies
+	UFUNCTION()
+	void ServerPlayerDied(); 
+	UFUNCTION()
+	void ClientPlayerDied(); 
 
 private:
+	//refresh HUD
+	UFUNCTION()
+	void RefreshPlayerHUDs();
+	
 	//a reference to all coloured tiles in the scene
 	UPROPERTY()
 	TArray<AColouredTile*> ColouredTiles;
@@ -38,4 +49,7 @@ private:
 	EColour ActiveColour1;
 	EColour ActiveColour2;
 	bool isColour1ReplacedNext = true;
+
+	int32 ServerDeaths = 0;
+	int32 ClientDeaths = 0;
 };

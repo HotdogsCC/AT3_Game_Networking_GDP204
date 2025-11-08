@@ -45,6 +45,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool GetShouldThrowAnimation();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void RefreshHUD(int32 ServerDeaths, int32 ClientDeaths); 
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -120,9 +123,11 @@ private:
 	UFUNCTION(Server, Reliable)
 	void UpdateSprintRPC(float NewSpeed);
 
+	//tells the animation controller to play throw animation
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayThrowAnimation();
 
+	//shows the fireball mesh in the players hands
 	UFUNCTION(NetMulticast, Reliable)
 	void FireRecharged();
 

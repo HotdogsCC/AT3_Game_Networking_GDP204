@@ -3,7 +3,10 @@
 
 #include "RespawnTrigger.h"
 
+#include "TwoPlayerGameMode.h"
+#include "WizardCharacter.h"
 #include "GameFramework/Character.h"
+#include "Kismet/GameplayStatics.h"
 
 void ARespawnTrigger::BeginPlay()
 {
@@ -19,7 +22,7 @@ void ARespawnTrigger::NotifyActorBeginOverlap(AActor* OtherActor)
         return;
     
     //is it a character?
-    if (ACharacter* Player = Cast<ACharacter>(OtherActor))
+    if (AWizardCharacter* Player = Cast<AWizardCharacter>(OtherActor))
     {
         if (!RespawnLocation)
         {
@@ -28,5 +31,15 @@ void ARespawnTrigger::NotifyActorBeginOverlap(AActor* OtherActor)
         }
         
         Player->SetActorLocation(RespawnLocation->GetActorLocation());
+
+        //is this the server player?
+        if (Player == UGameplayStatics::GetPlayerCharacter(this, 0))
+        {
+            Cast<ATwoPlayerGameMode>(UGameplayStatics::GetGameMode(this))->ServerPlayerDied();
+        }
+        else
+        {
+            Cast<ATwoPlayerGameMode>(UGameplayStatics::GetGameMode(this))->ClientPlayerDied();
+        }
     }
 }
