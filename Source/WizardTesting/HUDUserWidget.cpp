@@ -48,7 +48,9 @@ void UHUDUserWidget::HeadBob(float PlayerSpeed)
 	Offset *= HeadBobSizeScale;
 
 	//apply transformation
-	HandCanvasAsSlot->SetPosition(FVector2D(0.0f, Offset));
+	FMargin Margin;
+	Margin.Bottom = -Offset;
+	HandCanvasAsSlot->SetOffsets(Margin);
 	
 }
 

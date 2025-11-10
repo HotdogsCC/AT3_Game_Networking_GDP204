@@ -182,19 +182,25 @@ void AWizardCharacter::SpawnProjectile(UClass* ProjectileToSpawn)
 		QueryParams
 		);
 
-	//if we hit something
+	AProjectileBase* ProjectileInstance = GetWorld()->SpawnActor<AProjectileBase>(ProjectileToSpawn);
+
+	ProjectileInstance->SetActorLocation(GetActorLocation());
+	ProjectileInstance->SetActorRotation(GetActorRotation());
+
+	ProjectileInstance->SetWizardOwner(this);
+
+	//if we hit a target to path towards
 	if(bHit)
 	{
-		AProjectileBase* ProjectileInstance = GetWorld()->SpawnActor<AProjectileBase>(ProjectileToSpawn);
-
-		ProjectileInstance->SetActorLocation(GetActorLocation());
-		ProjectileInstance->SetActorRotation(GetActorRotation());
-		
-		ProjectileInstance->SetWizardOwner(this);
 		ProjectileInstance->SetTarget(HitResult.Location);
-		
-		ProjectileInstance->StartDetectingCollisions();
 	}
+	//if we didn't, just travel towards a point far away where the player is looking
+	else
+	{
+		ProjectileInstance->SetTarget(End);
+	}
+
+	ProjectileInstance->StartDetectingCollisions();
 }
 
 void AWizardCharacter::OnMove(const FInputActionValue& Value)
